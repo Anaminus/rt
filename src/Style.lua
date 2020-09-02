@@ -22,40 +22,31 @@ end
 local function updateProperty(self, object, property)
 	local state = self.objects[object]
 	local map = state.map
-	local modifier = state.modifier
 	if type(map) == "string" then
 		map = self.def[map]
 	end
 	if type(map) == "table" then
-		local field = map[property]
-		local mod = modifier
-		if type(field) == "function" then
-			field, mod = field()
-			if mod == nil or type(mod) ~= "string" then
-				mod = modifier
-			end
+		local value = self.theme:Field(map[property], state.flagbits)
+		if value ~= nil then
+			object[property] = value
 		end
-		object[property] = self.theme:Field(field, mod)
 	end
 end
 
 local function updateObject(self, object)
+	local theme = self.theme
 	local state = self.objects[object]
+	local flags = state.flagbits
 	local map = state.map
-	local modifier = state.modifier
 	if type(map) == "string" then
 		map = self.def[map]
 	end
 	if type(map) == "table" then
 		for property, field in pairs(map) do
-			local mod = modifier
-			if type(field) == "function" then
-				field, mod = field()
-				if mod == nil or type(mod) ~= "string" then
-					mod = modifier
-				end
+			local value = theme:Field(field, flags)
+			if value ~= nil then
+				object[property] = value
 			end
-			object[property] = self.theme:Field(field, mod)
 		end
 	end
 end
@@ -63,21 +54,17 @@ end
 local function updateAll(self)
 	local theme = self.theme
 	for object, state in pairs(self.objects) do
+		local flags = state.flagbits
 		local map = state.map
-		local modifier = state.modifier
 		if type(map) == "string" then
 			map = self.def[map]
 		end
 		if type(map) == "table" then
 			for property, field in pairs(map) do
-				local mod = modifier
-				if type(field) == "function" then
-					field, mod = field()
-					if mod == nil or type(mod) ~= "string" then
-						mod = modifier
-					end
+				local value = theme:Field(field, flags)
+				if value ~= nil then
+					object[property] = value
 				end
-				object[property] = theme:Field(field, mod)
 			end
 		end
 	end
@@ -115,13 +102,12 @@ end
 -- object will be updated. Returns the object.
 function Style.__index:Attach(object, map, update)
 	assert(type(map) == "string" or type(map) == "table")
-	if type(object) == "string" then
-		object = Instance.new(object)
-	end
 	local state = self.objects[object]
 	if state == nil then
 		state = {
-			modifier = "Default",
+			flags = {},
+			flaglist = {},
+			flagbits = 0,
 			map = nil,
 		}
 		self.objects[object] = state
@@ -182,37 +168,129 @@ end
 function Style.__index:SetTheme(theme, update)
 	assert(theme, "Theme expected")
 	self.theme = theme
+	for _, state in pairs(self.objects) do
+		state.flagbits = self.theme:Flags(state.flaglist)
+	end
 	if update == true or update == nil then
 		updateAll(self)
 	end
 end
 
---@sec: Style.Modifier
---@def: Style:Modifier(object: Instance): string
---@doc: Modifier gets the modifier for *object*, or nil if *object* is not
+--@sec: Style.Flags
+--@def: Style:Flags(object: GuiObject): {string}?
+--@doc: Flags returns the flags set for *object*. Returns nil if *object* is not
 -- attached.
-function Style.__index:Modifier(object)
+function Style.__index:Flags(object)
 	local state = self.objects[object]
 	if state == nil then
 		return nil
 	end
-	return state.modifier
+	local flags = {}
+	for flag in pairs(state.flags) do
+		table.insert(flags, flag)
+	end
+	table.sort(flags)
+	return flags
 end
 
---@sec: Style.SetModifier
---@def: Style:SetModifier(object: Instance, modifier: string, update: boolean?)
---@doc: SetModifier sets the modifier for *object*. Does nothing is *object* is
--- not attached. If *update* is true or unspecified, then *object* is updated.
-function Style.__index:SetModifier(object, modifier, update)
-	assert(type(modifier) == "string", "string expected")
+--@sec: Style.HasFlags
+--@def: Style:HasFlags(object: GuiObject, flags: ...string): bool
+--@doc: HasFlags returns true when *object* has all of the given flags, and
+-- false otherwise. Flags not known by the style's theme are ignored. Returns
+-- false if *object* is not attached.
+function Style.__index:HasFlags(object, ...)
+	local state = self.objects[object]
+	if state == nil then
+		return false
+	end
+	for _, flag in ipairs({...}) do
+		if type(flag) == "string" and flag ~= "Default" then
+			if not state.flags[flag] then
+				return false
+			end
+		end
+	end
+	return true
+end
+
+local function fastremove(t, value)
+	local n = #t
+	if n == 1 and t[1] == value then
+		t[1] = nil
+		return
+	end
+	local i = table.find(t, value)
+	if i == nil then
+		return
+	end
+	t[i] = t[n]
+	t[n] = nil
+end
+
+local function fastinsert(t, value)
+	if table.find(t, value) ~= nil then
+		return
+	end
+	table.insert(t, value)
+end
+
+--@sec: Style.SetFlags
+--@def: Style:SetFlags(object: GuiObject, flags: ...string)
+--@doc: SetFlags sets each of the given flags on *object*. Does nothing if
+-- *object* is not attached.
+function Style.__index:SetFlags(object, ...)
 	local state = self.objects[object]
 	if state == nil then
 		return
 	end
-	state.modifier = modifier
-	if update == true or update == nil then
-		updateObject(self, object)
+	for _, flag in ipairs({...}) do
+		if type(flag) == "string" and flag ~= "Default" then
+			state.flags[flag] = true
+			fastinsert(state.flaglist, flag)
+		end
 	end
+	state.flagbits = self.theme:Flags(state.flaglist)
+	updateObject(self, object)
+end
+
+--@sec: Style.UnsetFlags
+--@def: Style:UnsetFlags()
+--@doc: UnsetFlags unsets each of the given flags on *object*. Does nothing if
+-- *object* is not attached.
+function Style.__index:UnsetFlags(object, ...)
+	local state = self.objects[object]
+	if state == nil then
+		return
+	end
+	for _, flag in ipairs({...}) do
+		if type(flag) == "string" and flag ~= "Default" then
+			state.flags[flag] = nil
+			fastremove(state.flaglist, flag)
+		end
+	end
+	state.flagbits = self.theme:Flags(state.flaglist)
+	updateObject(self, object)
+end
+
+--@sec: Style.SetExclusiveFlags
+--@def: Style:SetExclusiveFlags()
+--@doc: SetExclusiveFlags unsets all of the flags on *object*, then sets each of
+-- the given flags. Does nothing if *object* is not attached.
+function Style.__index:SetExclusiveFlags(object, ...)
+	local state = self.objects[object]
+	if state == nil then
+		return
+	end
+	state.flags = {}
+	state.flaglist = {}
+	for _, flag in ipairs({...}) do
+		if type(flag) == "string" and flag ~= "Default" then
+			state.flags[flag] = true
+			fastinsert(state.flaglist, flag)
+		end
+	end
+	state.flagbits = self.theme:Flags(state.flaglist)
+	updateObject(self, object)
 end
 
 --@sec: Style.Destroy
