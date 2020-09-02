@@ -1,4 +1,3 @@
-
 --@sec: Style
 --@def: type Style
 --@doc: Style manages the properties of an object by applying values according
