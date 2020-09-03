@@ -358,8 +358,10 @@ local function fromStudio(theme, def, extraFlags)
 			itemFlags[i] = item.Name
 		end
 	end
-	for _, flag in ipairs(extraFlags) do
-		table.insert(itemFlags, flag)
+	if extraFlags then
+		for _, flag in ipairs(extraFlags) do
+			table.insert(itemFlags, flag)
+		end
 	end
 	local fields, flags = processFields(def, itemFlags)
 	local modmap = {}
