@@ -1,3 +1,4 @@
+return function(rt)
 --@sec: Theme
 --@def: type Theme
 --@doc: Theme maps a name to a value through a field. A field can have multiple
@@ -439,3 +440,4 @@ return {
 	new = new,
 	fromStudio = fromStudio,
 }
+end

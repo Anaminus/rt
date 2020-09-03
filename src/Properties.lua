@@ -1,3 +1,4 @@
+return function(rt)
 --@sec: Properties
 --@def: type Properties
 --@doc: Properties implements a type with gettable and settable properties.
@@ -89,3 +90,4 @@ end
 return {
 	new = new,
 }
+end

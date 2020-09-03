@@ -1,3 +1,4 @@
+return function(rt)
 --@sec: Style
 --@def: type Style
 --@doc: Style manages the properties of an object by applying values according
@@ -303,3 +304,4 @@ end
 return {
 	new = new,
 }
+end
