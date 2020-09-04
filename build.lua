@@ -26,4 +26,4 @@ bootstrapper.Source = types.ProtectedString(
 	)
 )
 
-file.write(output, model)
+file.write(output, model, "rbxm")
