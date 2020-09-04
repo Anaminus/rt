@@ -4,9 +4,9 @@
 type Theme
 ```
 
-Theme maps a name to a value through a field. A field can have multiple
-values, determined by a number of flags. When defining a field with multiple
-values, each value is mapped to a combination of flags.
+Theme defines the appearance of GUIs by mapping a name to a value
+through a **field**. A field can have multiple values by mapping to
+combinations of **flags**.
 
 When making a query, a field is searched for the value that matches the
 largest unambiguous subset of flags. If the given flag set does not match,
