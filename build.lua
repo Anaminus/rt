@@ -1,4 +1,4 @@
-local output = ...
+local output = (...) or "rt.rbxm"
 
 local model = DataModel.new()
 local bootstrapper = file.read(os.expand("$sd/src/bootstrapper.lua"))
