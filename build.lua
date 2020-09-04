@@ -1,14 +1,14 @@
 local output = ...
 
 local model = DataModel.new()
-local bootstrapper = file.read("src/bootstrapper.lua")
+local bootstrapper = file.read(os.expand("$sd/src/bootstrapper.lua"))
 bootstrapper.Name = "rt"
 bootstrapper.Parent = model
 
 local modules = {}
-for _, f in ipairs(os.dir("src/classes")) do
+for _, f in ipairs(os.dir(os.expand("$sd/src/classes"))) do
 	if not f.IsDir and os.split(f.Name, "fext") == ".lua" then
-		local module = file.read(os.join("src/classes", f.Name))
+		local module = file.read(os.join(os.expand("$sd/src/classes"), f.Name))
 		module.Parent = bootstrapper
 		table.insert(modules, module.Name)
 	end
