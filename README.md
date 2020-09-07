@@ -30,6 +30,7 @@ The following submodules are available:
 Class                                   | Description
 ----------------------------------------|------------
 [CheckBox](doc/classes/CheckBox.md)     | An interactive boolean widget.
+[Label](doc/classes/Label.md)           | A widget displaying text.
 [Lattice](doc/classes/Lattice.md)       | A grid-like container.
 [Properties](doc/classes/Properties.md) | A generic properties container.
 [Style](doc/classes/Style.md)           | Dynamically style GUIs.
